@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,40 +6,21 @@ import {
   Button,
   FlatList,
   Image,
-  TouchableWithoutFeedback,
-  Modal,
-  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import fallBackImage from './assets/fallBack.jpg';
+import { connect } from 'react-redux';
 
-const Courses = (props) => {
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
+class Courses extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: props.usr,
+      courses: props.crs,
+    };
+  }
 
-  const address =
-    'https://courses.ses-education.com:5600/courses/student-courses';
-  const token = props.navigation.getParam('token');
-  const user = props.navigation.getParam('user');
-
-  const coursesHandler = async () => {
-    try {
-      let result = fetch(address, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-        },
-      });
-      let json = await (await result).json();
-      setData(json);
-    } catch (err) {
-      console.log(err);
-      setError(err);
-    }
-  };
-
-  const renderCourseItem = ({ item }) => (
+  renderCourseItem = ({ item }) => (
     <View style={styles.courseCard}>
       <Text>Title: {item.title}</Text>
       <Text>Description: {item.description}</Text>
@@ -51,50 +32,42 @@ const Courses = (props) => {
     </View>
   );
 
-  const logoutHandler = () => {
-    /* try {
-      let result = fetch(address, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-        },
-      });
-      let json = await (await result).json();
-      setData(json);
-    } catch (err) {
-      console.log(err);
-      setError(err);
-    } */
-    props.navigation.navigate('login');
+  logoutHandler = () => {
+    this.props.navigation.navigate('login');
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>You are now logged in as:</Text>
-        <Text>Name: {user.name}</Text>
-        <Text>Email: {user.email}</Text>
-      </View>
-      <View style={styles.btnContainer}>
-        <Button title='Fetch courses' onPress={coursesHandler} />
-        <Button title='Logout' onPress={logoutHandler} />
-      </View>
-
+  render() {
+    let data = (
       <View style={styles.contentContainer}>
-        {data && (
+        {this.state.courses && (
           <FlatList
-            data={data}
-            renderItem={renderCourseItem}
+            data={this.state.courses}
+            renderItem={this.renderCourseItem}
             keyExtractor={(item) => item.course_id.toString()}
           />
         )}
-        {!data && <Text>Press Fetch Courses</Text>}
       </View>
-    </View>
-  );
-};
+    );
+
+    if (!this.state.courses) {
+      data = <ActivityIndicator size='large' color='red' />;
+    }
+    return (
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>You are now logged in as:</Text>
+          <Text>Name: {this.state.user.name}</Text>
+          <Text>Email: {this.state.user.email}</Text>
+        </View>
+        <View style={styles.btnContainer}>
+          <Button title='Logout' onPress={this.logoutHandler} />
+        </View>
+
+        {data}
+      </View>
+    );
+  }
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -141,4 +114,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
 });
-export default Courses;
+const mapStateToProps = (state) => {
+  return {
+    usr: state.user,
+    crs: state.courses,
+  };
+};
+
+export default connect(mapStateToProps)(Courses);

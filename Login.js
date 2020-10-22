@@ -1,30 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, Alert } from 'react-native';
+import { useDispatch } from 'react-redux';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  Button,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { login, get_courses } from './actions';
 
 const Login = (props) => {
-  const address = 'https://courses.ses-education.com:5600/auth/student/login';
+  const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchFromServer = async () => {
-    try {
-      let result = fetch(address, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          login: email,
-          password: password,
-        }),
-      });
-      let json = await (await result).json();
-      return json;
-    } catch (err) {
-      setError(err);
-    }
+    const result = await dispatch(login({ email, password }));
+    return result;
   };
 
   useEffect(() => {
@@ -33,23 +29,25 @@ const Login = (props) => {
     }
     return (cleanUp = () => {
       setError(null);
+      setIsLoading(false);
     });
   }, [error]);
 
   const loginHandler = async () => {
+    setIsLoading(true);
     setError(null);
     let valid = validationHandler();
     if (valid) {
       let res = await fetchFromServer();
       if (!res.token) {
-        setError('No answer from server');
+        setError(res);
       } else {
-        props.navigation.navigate('courses', {
-          token: res.token,
-          user: res.user,
-        });
+        await dispatch(get_courses(res.token));
+        setIsLoading(false);
+        props.navigation.navigate('courses');
       }
     }
+    //setIsLoading(false);
   };
 
   const validationHandler = () => {
@@ -64,29 +62,36 @@ const Login = (props) => {
     return true;
   };
 
+  let form = (
+    <View style={styles.inputContainer}>
+      <TextInput
+        placeholder='Email'
+        keyboardType='email-address'
+        placeholderTextColor='white'
+        style={styles.input}
+        onChangeText={(text) => setEmail(text)}
+        value={email}
+      />
+      <TextInput
+        placeholder='Password'
+        secureTextEntry={true}
+        style={styles.input}
+        placeholderTextColor='white'
+        onChangeText={(text) => setPassword(text)}
+        value={password}
+      />
+    </View>
+  );
+  if (isLoading) {
+    form = <ActivityIndicator size='large' color='red' />;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.header}>LOGIN</Text>
       </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder='Email'
-          keyboardType='email-address'
-          placeholderTextColor='white'
-          style={styles.input}
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-        />
-        <TextInput
-          placeholder='Password'
-          secureTextEntry={true}
-          style={styles.input}
-          placeholderTextColor='white'
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-        />
-      </View>
+      {form}
       <View style={styles.btnContainer}>
         <Button title='Login' onPress={loginHandler} />
       </View>
