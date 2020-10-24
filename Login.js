@@ -42,21 +42,28 @@ const Login = (props) => {
       if (!res.token) {
         setError(res);
       } else {
-        await dispatch(get_courses(res.token));
         setIsLoading(false);
         props.navigation.navigate('courses');
       }
+    } else {
+      setIsLoading(false);
     }
-    //setIsLoading(false);
   };
 
   const validationHandler = () => {
-    if (email != 'test@test.cc' && email != 'test2@test.cc') {
-      setError('Invalid email given.');
+    if (password.trim() === '' || email.trim() === '') {
+      setError('Email and password must be given');
       return false;
     }
-    if (password != '123456') {
-      setError('Invalid password, try again.');
+    if (password.length < 6) {
+      setError('Password must be at least 6 chars');
+      return false;
+    }
+    let pattern = new RegExp(
+      /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/
+    );
+    if (!pattern.test(String(email).toLowerCase())) {
+      setError('Email must be valid address');
       return false;
     }
     return true;
@@ -75,6 +82,7 @@ const Login = (props) => {
       <TextInput
         placeholder='Password'
         secureTextEntry={true}
+        keyboardType='numeric'
         style={styles.input}
         placeholderTextColor='white'
         onChangeText={(text) => setPassword(text)}

@@ -3,7 +3,6 @@ const GET_COURSES = 'GET_COURSES';
 
 export const login = (data) => async (dispatch) => {
   try {
-    //console.log('data in actions: ', data);
     const { email, password } = data;
     const res = await fetch(
       'https://courses.ses-education.com:5600/auth/student/login',
@@ -17,14 +16,11 @@ export const login = (data) => async (dispatch) => {
       }
     );
     if (!res.ok) {
-      const resError = await res.json();
-      let message = 'Server error on login';
-      if (resError && resError.error.length > 0) {
-        return message;
-      }
+      let message = '401 Unauthorized request, enter existing user email';
+
+      return message;
     }
     let json = await res.json();
-    //console.log('json in actions login: ', json);
     dispatch({
       type: LOGIN,
       payload: { token: json.token, user: json.user },
@@ -49,14 +45,10 @@ export const get_courses = (token) => async (dispatch) => {
       }
     );
     if (!res.ok) {
-      const resError = await res.json();
       let message = 'Server error on get courses';
-      if (resError && resError.error.length > 0) {
-        return message;
-      }
+      return message;
     }
     let serverResponse = await res.json();
-    //console.log('json in actions get courses: ', serverResponse);
     dispatch({
       type: GET_COURSES,
       payload: { courses: serverResponse },

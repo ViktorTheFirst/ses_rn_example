@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,14 +10,26 @@ import {
 } from 'react-native';
 import fallBackImage from './assets/fallBack.jpg';
 import { connect } from 'react-redux';
+import { get_courses } from './actions';
 
-class Courses extends React.Component {
+class Courses extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      token: props.tkn,
       user: props.usr,
-      courses: props.crs,
+      courses: null,
     };
+  }
+
+  componentDidMount() {
+    this.props.onGetCourses(this.props.tkn);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.crs !== prevProps.crs) {
+      this.setState({ ...this.state, courses: this.props.crs });
+    }
   }
 
   renderCourseItem = ({ item }) => (
@@ -37,21 +49,6 @@ class Courses extends React.Component {
   };
 
   render() {
-    let data = (
-      <View style={styles.contentContainer}>
-        {this.state.courses && (
-          <FlatList
-            data={this.state.courses}
-            renderItem={this.renderCourseItem}
-            keyExtractor={(item) => item.course_id.toString()}
-          />
-        )}
-      </View>
-    );
-
-    if (!this.state.courses) {
-      data = <ActivityIndicator size='large' color='red' />;
-    }
     return (
       <View style={styles.container}>
         <View style={styles.headerContainer}>
@@ -63,7 +60,17 @@ class Courses extends React.Component {
           <Button title='Logout' onPress={this.logoutHandler} />
         </View>
 
-        {data}
+        <View style={styles.contentContainer}>
+          {this.state.courses ? (
+            <FlatList
+              data={this.state.courses}
+              renderItem={this.renderCourseItem}
+              keyExtractor={(item) => item.course_id.toString()}
+            />
+          ) : (
+            <ActivityIndicator size='large' color='red' />
+          )}
+        </View>
       </View>
     );
   }
@@ -116,9 +123,16 @@ const styles = StyleSheet.create({
 });
 const mapStateToProps = (state) => {
   return {
+    tkn: state.token,
     usr: state.user,
     crs: state.courses,
   };
 };
 
-export default connect(mapStateToProps)(Courses);
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onGetCourses: async (token) => await dispatch(get_courses(token)),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Courses);
